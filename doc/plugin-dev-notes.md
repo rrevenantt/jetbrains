@@ -667,35 +667,12 @@ int selEnd = editor.getSelectionModel().getSelectionEnd();
 
 ### Get offset from Action event (right click menu)
 
-See [question in form](https://intellij-support.jetbrains.com/hc/en-us/community/posts/207565305-Mystified-by-right-click-editor-popup-psielement-selection?page=1)
-
-Seems mouse event appears *after* update(); only  actionPerformed() sees right clicked caret position correctly. :) So `editor.getCaretModel().getOffset()` will work in actionPerformed() but not update().  In update(), you must use:
+Seems mouse event appears *after* update() in actionPerformed() however. :) So actionEvent.getInputEvent() will work in actionPerformed().
 
 ```java
-PsiFile file = e.getData(LangDataKeys.PSI_FILE);
-Editor editor = e.getData(PlatformDataKeys.EDITOR);
-ParserRuleRefNode r = null;
-if ( editor!=null ) {
-	Point mousePosition = editor.getContentComponent().getMousePosition();
-	if ( mousePosition!=null ) {
-		LogicalPosition pos = editor.xyToLogicalPosition(mousePosition);
-		int offset = editor.logicalPositionToOffset(pos);
-		PsiElement el = file.findElementAt(offset);
-	}
-}
-```
-
-ugh. actually, update() is called 3rd time right before actionPerformed but mouse event has occurred now so we need to change update() to test and use
-
-```java
-// in update()
-InputEvent inputEvent = e.getInputEvent();
-if ( inputEvent instanceof MouseEvent ) {
-	// must be the update() call right before actionPerformed use caret offset
-}
-else {
-	// do stuff above (use mouse position)
-}
+Point mousePosition = editor.getContentComponent().getMousePosition();
+LogicalPosition pos=editor.xyToLogicalPosition(mousePosition);
+int offset = editor.logicalPositionToOffset(pos);
 ```
 
 ### Highlight region of editor text
@@ -715,15 +692,6 @@ RangeHighlighter rangehighlighter=
                                     attr,
                                     HighlighterTargetArea.EXACT_RANGE);
 ```
-
-## Caching/associating data with IDE objects
-
-From [UserData lifecycle](https://intellij-support.jetbrains.com/hc/en-us/community/posts/206755575-UserData-lifecycle)
-
-> There is no automatic mechanism that would clear the userdata of a PSI element. Normally it lives as long as the element itself, which for a PsiFile can be the entire IDE usage session.
-> If you need to store a value in UserData that depends on other things (such as the contents of the file itself), you can use CachedValuesManager.createCachedValue() and specify the dependencies for the value.
-
-From [Best way to associate data with a PsiElement?](https://intellij-support.jetbrains.com/hc/en-us/community/posts/206122359-Best-way-to-associate-data-with-a-PsiElement-): "The recommended approach is to put CachedValues (created using CachedValueManager) into the userdata of PsiElements."
 
 ## Actions, intentions, live templates
 

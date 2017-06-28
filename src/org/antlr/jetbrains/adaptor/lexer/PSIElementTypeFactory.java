@@ -3,11 +3,11 @@ package org.antlr.jetbrains.adaptor.lexer;
 import com.intellij.lang.Language;
 import com.intellij.psi.tree.IElementType;
 import com.intellij.psi.tree.TokenSet;
+import com.thaiopensource.xml.dtd.om.Def;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.misc.Utils;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -24,16 +24,28 @@ public class PSIElementTypeFactory {
 	private static final Map<Language, List<RuleIElementType>>  ruleIElementTypesCache = new HashMap<>();
 	private static final Map<Language, Map<String, Integer>>    tokenNamesCache = new HashMap<>();
 	private static final Map<Language, Map<String, Integer>>    ruleNamesCache = new HashMap<>();
-	private static final Map<Language, TokenIElementType>       eofIElementTypesCache = new HashMap<>();
+	private static final Map<Language, TokenDefaultIElementType>       eofIElementTypesCache = new HashMap<>();
+	public static Map<Language,DefaultIElementTypesFactory> 	iElementTypesFactory = new HashMap<>();
+//	public static DefaultIElementTypesFactory iElementTypesFactory = new DefaultIElementTypesFactory();
 
 	private PSIElementTypeFactory() {
 	}
 
 	public static void defineLanguageIElementTypes(Language language,
+												   String[] tokenNames,
+												   String[] ruleNames){
+		defineLanguageIElementTypes(language,tokenNames,ruleNames,new DefaultIElementTypesFactory());
+	}
+
+	public static void defineLanguageIElementTypes(Language language,
 	                                               String[] tokenNames,
-	                                               String[] ruleNames)
+	                                               String[] ruleNames,
+												   DefaultIElementTypesFactory typesFactory)
 	{
 		synchronized (PSIElementTypeFactory.class) {
+//			if (iElementTypesFactory == null) {iElementTypesFactory = new DefaultIElementTypesFactory();}
+			if ( iElementTypesFactory.get(language) == null)
+					iElementTypesFactory.put(language, typesFactory);
 			if ( tokenIElementTypesCache.get(language)==null ) {
 				List<TokenIElementType> types = tokenIElementTypesCache.get(language);
 				if ( types==null ) {
@@ -57,10 +69,10 @@ public class PSIElementTypeFactory {
 		}
 	}
 
-	public static TokenIElementType getEofElementType(Language language) {
-		TokenIElementType result = eofIElementTypesCache.get(language);
+	public static TokenDefaultIElementType getEofElementType(Language language) {
+		TokenDefaultIElementType result = eofIElementTypesCache.get(language);
 		if (result == null) {
-			result = new TokenIElementType(Token.EOF, "EOF", language);
+			result = new TokenDefaultIElementType(Token.EOF, "EOF", language);
 			eofIElementTypesCache.put(language, result);
 		}
 
@@ -95,28 +107,12 @@ public class PSIElementTypeFactory {
 
 	@NotNull
 	public static List<TokenIElementType> createTokenIElementTypes(Language language, String[] tokenNames) {
-		List<TokenIElementType> result;
-		TokenIElementType[] elementTypes = new TokenIElementType[tokenNames.length];
-		for (int i = 0; i < tokenNames.length; i++) {
-			if ( tokenNames[i]!=null ) {
-				elementTypes[i] = new TokenIElementType(i, tokenNames[i], language);
-			}
-		}
-
-		result = Collections.unmodifiableList(Arrays.asList(elementTypes));
-		return result;
+		return Collections.unmodifiableList(iElementTypesFactory.get(language).createTokenIElementTypes(language,tokenNames));
 	}
 
 	@NotNull
 	public static List<RuleIElementType> createRuleIElementTypes(Language language, String[] ruleNames) {
-		List<RuleIElementType> result;
-		RuleIElementType[] elementTypes = new RuleIElementType[ruleNames.length];
-		for (int i = 0; i < ruleNames.length; i++) {
-			elementTypes[i] = new RuleIElementType(i, ruleNames[i], language);
-		}
-
-		result = Collections.unmodifiableList(Arrays.asList(elementTypes));
-		return result;
+		return Collections.unmodifiableList(iElementTypesFactory.get(language).createRuleIElementTypes(language,ruleNames));
 	}
 
 	public static TokenSet createTokenSet(Language language, int... types) {
@@ -128,7 +124,7 @@ public class PSIElementTypeFactory {
 				elementTypes[i] = getEofElementType(language);
 			}
 			else {
-				elementTypes[i] = tokenIElementTypes.get(types[i]);
+				elementTypes[i] = (IElementType)tokenIElementTypes.get(types[i]);
 			}
 		}
 

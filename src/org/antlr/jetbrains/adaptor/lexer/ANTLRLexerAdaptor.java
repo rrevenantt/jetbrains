@@ -53,7 +53,7 @@ public class ANTLRLexerAdaptor extends com.intellij.lexer.LexerBase {
 	 * by {@link PSIElementTypeFactory#getTokenIElementTypes} for
 	 * optimum efficiency of the {@link #getTokenType} method.
 	 */
-	private final List<? extends IElementType> tokenElementTypes;
+	private final List<? extends TokenIElementType> tokenElementTypes;
 
 	/**
 	 * This is the backing field for {@link #getLexer()}.
@@ -129,7 +129,7 @@ public class ANTLRLexerAdaptor extends com.intellij.lexer.LexerBase {
 	 */
 	public ANTLRLexerAdaptor(Language language, Lexer lexer) {
 		this.language = language;
-		this.tokenElementTypes = PSIElementTypeFactory.getTokenIElementTypes(language);
+		this.tokenElementTypes =PSIElementTypeFactory.getTokenIElementTypes(language);
 		this.lexer = lexer;
 	}
 
@@ -152,6 +152,7 @@ public class ANTLRLexerAdaptor extends com.intellij.lexer.LexerBase {
 	protected Token getCurrentToken() {
 		return currentToken;
 	}
+	int printing = 0;
 
 	@Override
 	public void start(CharSequence buffer, int startOffset, int endOffset, int initialState) {
@@ -160,6 +161,14 @@ public class ANTLRLexerAdaptor extends com.intellij.lexer.LexerBase {
 
 		CharStream in = new CharSequenceCharStream(buffer, endOffset, IntStream.UNKNOWN_SOURCE_NAME);
 		in.seek(startOffset);
+		int prevOffset = startOffset;
+		while (prevOffset > 0 && buffer.charAt(prevOffset) != '\n') {
+			prevOffset--;
+			in.seek(prevOffset+1	);
+		}
+
+//		in.seek(prevOffset+(startOffset==0?0:1)	);
+
 
 		ANTLRLexerState state;
 		if (startOffset == 0 && initialState == 0) {
@@ -169,7 +178,10 @@ public class ANTLRLexerAdaptor extends com.intellij.lexer.LexerBase {
 		}
 
 		applyLexerState(in, state);
-		advance();
+        advance();
+		while (((CharSequenceCharStream) in).getPosition()<=startOffset
+                && endOffset != 0)
+			advance();
 	}
 
 	@Nullable
@@ -185,7 +197,7 @@ public class ANTLRLexerAdaptor extends com.intellij.lexer.LexerBase {
 			return null;
 		}
 
-		return tokenElementTypes.get(antlrTokenType);
+		return (IElementType) tokenElementTypes.get(antlrTokenType);
 	}
 
 	@Override
@@ -278,5 +290,9 @@ public class ANTLRLexerAdaptor extends com.intellij.lexer.LexerBase {
 	 */
 	protected ANTLRLexerState toLexerState(int state) {
 		return stateCache.get(state);
+	}
+
+	public void setLexerLine(int line){
+		lexer.setLine(line);
 	}
 }

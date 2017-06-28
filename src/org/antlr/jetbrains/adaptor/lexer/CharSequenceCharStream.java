@@ -9,7 +9,7 @@ import org.antlr.v4.runtime.misc.Interval;
  * {@link org.antlr.v4.runtime.CharStream} backed by an arbitrary
  * {@link CharSequence}.
  */
-class CharSequenceCharStream implements CharStream {
+public class CharSequenceCharStream implements CharStream {
 	private final CharSequence buffer;
 	/**
 	 * If greater than or equal to 0, this value overrides the value returned by
