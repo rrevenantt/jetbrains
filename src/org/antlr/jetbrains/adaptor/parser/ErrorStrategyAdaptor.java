@@ -1,7 +1,5 @@
 package org.antlr.jetbrains.adaptor.parser;
 
-import hlasm.HlasmLexer;
-import hlasm.HlasmParser;
 import org.antlr.v4.runtime.*;
 import org.antlr.v4.runtime.atn.ATN;
 import org.antlr.v4.runtime.atn.ATNState;

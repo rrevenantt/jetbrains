@@ -1,14 +1,10 @@
 package org.antlr.jetbrains.adaptor.parser;
 
-import com.hlasm_plugin.HlasmLanguage;
-import com.hlasm_plugin.psi.HlasmRecursiveWSTokenBinders;
 import com.intellij.lang.Language;
 import com.intellij.lang.PsiBuilder;
 import com.intellij.lang.WhitespacesAndCommentsBinder;
 import com.intellij.openapi.progress.ProgressIndicatorProvider;
 import com.intellij.psi.tree.IElementType;
-import hlasm.HlasmLexer;
-import hlasm.HlasmParser;
 import org.antlr.jetbrains.adaptor.lexer.PSIElementTypeFactory;
 import org.antlr.jetbrains.adaptor.lexer.RuleIElementType;
 import org.antlr.jetbrains.adaptor.lexer.TokenIElementType;
@@ -41,11 +37,6 @@ public class ANTLRParseTreeToPSIConverter implements ParseTreeListener {
 
 	protected final List<TokenIElementType> tokenElementTypes;
 	protected final List<RuleIElementType> ruleElementTypes;
-	public final static IElementType tempType = new IElementType("test", HlasmLanguage.INSTANCE){
-		@Override
-		public boolean isLeftBound(){ return true;}
-	};
-
 	/** Map an error's start char index (usually start of a token) to the error object. */
 	protected Map<Integer, SyntaxError> tokenToErrorMap = new HashMap<>();
 
@@ -62,7 +53,6 @@ public class ANTLRParseTreeToPSIConverter implements ParseTreeListener {
 				for (SyntaxError error : syntaxErrors) {
 					// record first error per token
 					int StartIndex = error.getOffendingSymbol().getStartIndex();
-					System.out.println("error at:"+StartIndex);
 					if ( !tokenToErrorMap.containsKey(StartIndex) ) {
 						tokenToErrorMap.put(StartIndex, error);
 					}
@@ -165,28 +155,6 @@ public class ANTLRParseTreeToPSIConverter implements ParseTreeListener {
 //		ctx.exception.
 		ProgressIndicatorProvider.checkCanceled();
         PsiBuilder.Marker marker = getBuilder().mark();
-
-        if (language.is(HlasmLanguage.INSTANCE)) {
-			if (ctx.getRuleIndex() == HlasmParser.RULE_line
-					|| ctx.getRuleIndex() == HlasmParser.RULE_line_wrapper
-					|| ctx.getRuleIndex() == HlasmParser.RULE_statement
-					|| ctx.getRuleIndex() == HlasmParser.RULE_macro
-					|| ctx.getRuleIndex() == HlasmParser.RULE_lines2
-					|| ctx.getRuleIndex() == HlasmParser.RULE_lines) {
-				marker.setCustomEdgeTokenBinders(/*new WhitespacesAndCommentsBinder() {
-                @Override
-                public int getEdgePosition(List<IElementType> tokens, boolean atStreamEdge, TokenTextGetter getter) {
-                    int i = tokens.size() -1 ;
-                    while (i >= 0 && !(((TokenIElementType)tokens.get(i)).getANTLRTokenType() == HlasmLexer.SPACES1)) {
-                        i--;
-                    }
-                    return i+1;
-                }
-            }*/ HlasmRecursiveWSTokenBinders.leadingCommentsBinder(
-						PSIElementTypeFactory.createTokenSet(HlasmLanguage.INSTANCE, HlasmLexer.SPACES1, HlasmLexer.COMMENT)
-				), null);
-			}
-		}
 		markers.push(marker);
 	}
 
@@ -194,75 +162,7 @@ public class ANTLRParseTreeToPSIConverter implements ParseTreeListener {
 	public void exitEveryRule(ParserRuleContext ctx) {
 		ProgressIndicatorProvider.checkCanceled();
 		PsiBuilder.Marker marker = markers.pop();
-
-//		if (ctx.getRuleIndex() == HlasmParser.RULE_arguments){
-//			marker.done(tempType);
-//			((PsiBuilderImpl.ProductionMarker)marker).remapTokenType((IElementType) getRuleElementTypes().get(ctx.getRuleIndex()));
-//		}
-//		else {
-			marker.done((IElementType) getRuleElementTypes().get(ctx.getRuleIndex()));
-//		}
-//        if (ctx.getRuleIndex() == HlasmParser.RULE_line_wrapper){
-//            marker.setCustomEdgeTokenBinders(null, WhitespacesBinders.DEFAULT_RIGHT_BINDER);
-//        }
-
-		if (language.is(HlasmLanguage.INSTANCE)) {
-			if (ctx.getRuleIndex() == HlasmParser.RULE_line
-					|| ctx.getRuleIndex() == HlasmParser.RULE_statement
-					|| ctx.getRuleIndex() == HlasmParser.RULE_line_wrapper
-					|| ctx.getRuleIndex() == HlasmParser.RULE_macro
-					|| ctx.getRuleIndex() == HlasmParser.RULE_lines2
-					|| ctx.getRuleIndex() == HlasmParser.RULE_lines) {
-				marker.setCustomEdgeTokenBinders(HlasmRecursiveWSTokenBinders.leadingCommentsBinder(
-						PSIElementTypeFactory.createTokenSet(HlasmLanguage.INSTANCE, HlasmLexer.SPACES1, HlasmLexer.COMMENT))
-						, HlasmRecursiveWSTokenBinders.trailingCommentsBinder(
-								PSIElementTypeFactory.createTokenSet(HlasmLanguage.INSTANCE, HlasmLexer.ENDLINE_COMM, HlasmLexer.ARG_SEPARATOR)
-						));
-            /*marker.setCustomEdgeTokenBinders(new WhitespacesAndCommentsBinder() {
-				@Override
-				// seems to be dead code here
-				public int getEdgePosition(List<IElementType> tokens, boolean atStreamEdge, TokenTextGetter getter) {
-					int i = 0;
-					for (IElementType type : tokens
-							) {
-						if (type.equals(TokenType.WHITE_SPACE)) {
-							i++;
-						}
-					}
-					return i;
-				}
-			}, new WhitespacesAndCommentsBinder() {
-				@Override
-				public int getEdgePosition(List<IElementType> tokens, boolean atStreamEdge, TokenTextGetter getter) {
-					int i = 0;
-					for (IElementType type : tokens
-							) {
-						if (type instanceof TokenIElementType &&
-								(((TokenIElementType) type).getANTLRTokenType() == HlasmLexer.COMMENT
-										|| ((TokenIElementType) type).getANTLRTokenType() == HlasmLexer.ENDLINE)) {
-							i++;
-						}
-						else if (atStreamEdge) {
-							i++;
-						}
-					}
-					return i;
-				}
-			});*/
-			}
-		}
+		marker.done((IElementType) getRuleElementTypes().get(ctx.getRuleIndex()));
 	}
-	public class MyWSBinder implements WhitespacesAndCommentsBinder,WhitespacesAndCommentsBinder.RecursiveBinder{
-        public MyWSBinder() {
-        }
 
-        @Override
-        public int getEdgePosition(List<IElementType> tokens, boolean atStreamEdge, TokenTextGetter getter) {
-            int i = tokens.size() -1 ;
-            while (i >= 0 && !(((TokenIElementType)tokens.get(i)).getANTLRTokenType() == HlasmLexer.SPACES1)) {
-                i--;
-            }
-            return i+1;
-        }
-    }
 }
