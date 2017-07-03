@@ -54,7 +54,7 @@ public class ErrorStrategyAdaptor extends DefaultErrorStrategy {
 			int la = tokens.LA(1);
 			if(!recognizer.getATN().nextTokens(s).contains(la) && la != -1) {
 				if(!recognizer.isExpectedToken(la)) {
-			        System.out.println(" syncing on rule :" + recognizer.getRuleNames()[recognizer.getContext().getRuleIndex()]);
+//			        System.out.println(" syncing on rule :" + recognizer.getRuleNames()[recognizer.getContext().getRuleIndex()]);
 					switch(s.getStateType()) {
 						case 3:
 						case 4:
@@ -86,7 +86,7 @@ public class ErrorStrategyAdaptor extends DefaultErrorStrategy {
 
 	public Token myRecover(Parser recognizer) throws RecognitionException {
 		IntervalSet expecting = this.getExpectedTokens(recognizer);
-		System.out.println("myRecover missing " + expecting.toString(recognizer.getVocabulary()));
+//		System.out.println("myRecover missing " + expecting.toString(recognizer.getVocabulary()));
 		if(this.singleTokenInsertion(recognizer)) {
 			return this.getMissingSymbol(recognizer);
 		/*	Token currentSymbol = recognizer.getCurrentToken();
@@ -114,14 +114,14 @@ public class ErrorStrategyAdaptor extends DefaultErrorStrategy {
 
     @Override
     public Token recoverInline(Parser recognizer) throws RecognitionException {
-        System.out.println("recoveringInline from :"+recognizer.getRuleNames()[recognizer.getContext().getRuleIndex()]);
+//        System.out.println("recoveringInline from :"+recognizer.getRuleNames()[recognizer.getContext().getRuleIndex()]);
         return super.recoverInline(recognizer);
     }
 
     @Override
 	public void recover(Parser recognizer, RecognitionException e) {
 //		e.printStackTrace();
-		System.out.println("recovering from :"+recognizer.getRuleNames()[e.getCtx().getRuleIndex()]);
+//		System.out.println("recovering from :"+recognizer.getRuleNames()[e.getCtx().getRuleIndex()]);
 		super.recover(recognizer, e);
 	}
 }
