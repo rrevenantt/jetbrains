@@ -6,6 +6,10 @@ import org.antlr.v4.runtime.atn.ATNState;
 import org.antlr.v4.runtime.atn.ParserATNSimulator;
 import org.antlr.v4.runtime.misc.IntervalSet;
 import org.antlr.v4.runtime.misc.Pair;
+import org.antlr.v4.runtime.tree.ErrorNode;
+import org.antlr.v4.runtime.tree.ParseTreeListener;
+
+import java.util.Iterator;
 
 /** Adapt ANTLR's DefaultErrorStrategy so that we add error nodes
  *  for EOF if reached at start of resync's consumeUntil().
@@ -17,7 +21,10 @@ public class ErrorStrategyAdaptor extends DefaultErrorStrategy {
 	protected void consumeUntil(Parser recognizer, IntervalSet set) {
  		Token o = recognizer.getCurrentToken();
 		if ( o.getType()==Token.EOF ) {
-			recognizer.getRuleContext().addErrorNode(o);
+			ErrorNode error =  recognizer.getRuleContext().addErrorNode(o);
+			for (Object o1 : recognizer.getParseListeners())
+				((ParseTreeListener) o1).visitErrorNode(error);
+
 		}
 //	    if(	recognizer.getContext().getRuleIndex() == HlasmParser.RULE_lines){
 //	    if(	recognizer.getContext().getRuleIndex() == HlasmParser.RULE_line_wrapper){
@@ -31,6 +38,7 @@ public class ErrorStrategyAdaptor extends DefaultErrorStrategy {
 	 *  current position indicating that is where we lack a token.
 	 *  if no input, highlight at position 0.
 	 */
+	@Override
 	protected Token getMissingSymbol(Parser recognizer) {
 		Token missingSymbol = super.getMissingSymbol(recognizer);
 		// alter the default missing symbol.

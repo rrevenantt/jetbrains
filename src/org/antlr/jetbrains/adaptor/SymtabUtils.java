@@ -32,7 +32,7 @@ public class SymtabUtils {
 		// That might lead back to this method, but probably with a
 		// different xpathToIDNodes (which is why I don't call this method
 		// directly).
-		ScopeNode context = scope.getContext();
+		ScopeNode context = (ScopeNode)scope.getContext();
 		if ( context!=null ) {
 			return context.resolve(namedElement);
 		}

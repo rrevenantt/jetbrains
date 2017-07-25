@@ -8,6 +8,8 @@ import org.antlr.v4.runtime.misc.ObjectEqualityComparator;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Arrays;
+
 /**
  * This class stores the state of an ANTLR lexer, such that it can be
  * applied back to the lexer instance at a later time.
@@ -62,7 +64,7 @@ public class ANTLRLexerState {
 	 */
 	public ANTLRLexerState(int mode, @Nullable IntegerStack modeStack) {
 		this.mode = mode;
-		this.modeStack = modeStack != null ? modeStack.toArray() : null;
+		this.modeStack = modeStack != null ? modeStack.toArray() : new int[0];
 	}
 
 	/**
@@ -116,13 +118,17 @@ public class ANTLRLexerState {
 
 		ANTLRLexerState other = (ANTLRLexerState)obj;
 		return this.mode == other.mode
-			&& ObjectEqualityComparator.INSTANCE.equals(this.modeStack, other.modeStack);
+//			&& ObjectEqualityComparator.INSTANCE.equals(this.modeStack, other.modeStack);
+			&& Arrays.equals(this.modeStack,other.modeStack);
 	}
 
 	protected int hashCodeImpl() {
 		int hash = MurmurHash.initialize();
 		hash = MurmurHash.update(hash, mode);
-		hash = MurmurHash.update(hash, modeStack);
+		for (int i :
+				modeStack) {
+			hash = MurmurHash.update(hash, i);
+		}
 		return MurmurHash.finish(hash, 2);
 	}
 }

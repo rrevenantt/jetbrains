@@ -2,8 +2,11 @@ package org.antlr.jetbrains.adaptor.lexer;
 
 import com.intellij.lang.ParserDefinition;
 import com.intellij.lang.PsiBuilder;
+import com.intellij.lang.impl.PsiBuilderAdapter;
+import com.intellij.lang.impl.PsiBuilderImpl;
 import com.intellij.openapi.progress.ProgressIndicatorProvider;
 import com.intellij.openapi.project.Project;
+import com.intellij.psi.tree.IElementType;
 import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.CommonTokenFactory;
 import org.antlr.v4.runtime.Token;
@@ -23,6 +26,8 @@ import org.antlr.v4.runtime.misc.Pair;
 public class PSITokenSource implements TokenSource {
 	protected PsiBuilder builder;
 	protected TokenFactory tokenFactory = CommonTokenFactory.DEFAULT;
+	protected int currentTokenIndex = 0;
+	public int builderTokenIndex = 0;
 
 	public PSITokenSource(PsiBuilder builder) {
 		this.builder = builder;
@@ -48,21 +53,34 @@ public class PSITokenSource implements TokenSource {
 	public Token nextToken() {
 		ProgressIndicatorProvider.checkCanceled();
 
-		TokenIElementType ideaTType = (TokenIElementType)builder.getTokenType();
+
+		int tokenOffset = currentTokenIndex- builderTokenIndex;
+		TokenIElementType ideaTType = (TokenIElementType)builder.rawLookup(tokenOffset);
+		while (ideaTType != null
+				&& ((PsiBuilderImpl) builder).whitespaceOrComment((IElementType) ideaTType)){
+			currentTokenIndex += 1;
+			tokenOffset += 1;
+			ideaTType = (TokenIElementType)builder.rawLookup(tokenOffset);
+		}
+
 		int type = ideaTType!=null ? ideaTType.getANTLRTokenType() : Token.EOF;
 
 		int channel = Token.DEFAULT_CHANNEL;
 		Pair<TokenSource, CharStream> source = new Pair<TokenSource, CharStream>(this, null);
-		String text = builder.getTokenText();
-		int start = builder.getCurrentOffset();
-		int length = text != null ? text.length() : 0;
+//		String text = builder.getTokenText();
+//		int start = builder.getCurrentOffset();
+		int start = builder.rawTokenTypeStart(tokenOffset );
+		String text = builder.getOriginalText().subSequence(
+				builder.rawTokenTypeStart(tokenOffset),
+				builder.rawTokenTypeStart(tokenOffset+1)).toString();
+		int length = type != Token.EOF ? text.length() : 0;
 		int stop = start + length - 1;
 		// PsiBuilder doesn't provide line, column info
 		int line = 0;
 		int charPositionInLine = 0;
 		Token t = tokenFactory.create(source, type, text, channel, start, stop, line, charPositionInLine);
-		builder.advanceLexer();
-//		System.out.println("TOKEN: "+t);
+//		builder.advanceLexer();
+		currentTokenIndex +=1;
 		return t;
 	}
 

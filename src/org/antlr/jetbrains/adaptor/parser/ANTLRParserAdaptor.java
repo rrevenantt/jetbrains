@@ -47,35 +47,52 @@ public abstract class ANTLRParserAdaptor implements PsiParser {
      */
     public void parseLight(IElementType root, PsiBuilder builder) {
 
-        if (oldTree != null) {
-
-        }
 
         ProgressIndicatorProvider.checkCanceled();
 //		NonCancelableSection test = ProgressIndicatorProvider.startNonCancelableSectionIfSupported();
         TokenSource source = new PSITokenSource(builder);
-        TokenStream tokens = new CommonTokenStream(source);
+        TokenStream tokens = new CommonTokenStream(source){
+            @Override
+            public void consume() {
+//                if (get(p).getChannel() == Token.DEFAULT_CHANNEL)
+
+//                System.out.println("-------------------------");
+//                System.out.println("builder index before " + builder.rawTokenIndex());
+//                System.out.println("curr stream index    " + this.p);
+//                ((PSITokenSource) getTokenSource()).builderTokenIndex = builder.rawTokenIndex();
+                builder.getTokenType();  // to skip whitespaces and comments
+                ((PSITokenSource) getTokenSource()).builderTokenIndex = builder.rawTokenIndex();
+                super.consume();
+//                System.out.println("next stream index    " + this.p);
+//                System.out.println("builder index        " + builder.rawTokenIndex());
+
+            }
+        };
         parser.setTokenStream(tokens);
         parser.setErrorHandler(new ErrorStrategyAdaptor()); // tweaks missing tokens
         parser.removeErrorListeners();
         parser.addErrorListener(new SyntaxErrorListener()); // trap errors
         parser.addErrorListener(new ConsoleErrorListener());
 //        parser.getInterpreter().setPredictionMode(PredictionMode.SLL);
+
         ParseTree parseTree = null;
 //        ((CommonTokenStream) parser.getTokenStream()).fill();
 //        ((CommonTokenStream) parser.getTokenStream()).seek(0);
 //        while (tokens.LA(1) != Token.EOF && parser.getCurrentToken().getType() != Token.EOF) {
-            PsiBuilder.Marker rollbackMarker = builder.mark();
+//            PsiBuilder.Marker rollbackMarker = builder.mark();
+            parser.setBuildParseTree(false);
+            ANTLRParseTreeToPSIConverter listener = createListener(parser, root, builder);
+            parser.addParseListener(listener);
+            parser.addErrorListener(listener);
             try {
                 parseTree = parse(parser, root);
             } finally {
-                rollbackMarker.rollbackTo();
+//                rollbackMarker.rollbackTo();
             }
             // Now convert ANTLR parser tree to PSI tree by mimicking subtree
             // enter/exit with mark/done calls. I *think* this creates their parse
             // tree (AST as they call it) when you call {@link PsiBuilder#getTreeBuilt}
-            ANTLRParseTreeToPSIConverter listener = createListener(parser, root, builder);
-            ParseTreeWalker.DEFAULT.walk(listener, parseTree);
+//            ParseTreeWalker.DEFAULT.walk(listener, parseTree);
 //            while (parser.getCurrentToken().getType() != Token.EOF && parser.getCurrentToken().getType() != HlasmParser.ENDLINE) {
 //                parser.getTokenStream().consume();
 //                builder.advanceLexer();

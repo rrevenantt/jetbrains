@@ -18,7 +18,7 @@ public interface ScopeNode extends PsiElement {
 	@Nullable
 	PsiElement resolve(PsiNamedElement element);
 
-	@Nullable
-	@Override // alter return type
-	ScopeNode getContext();
+//	@Nullable
+//	@Override // alter return type
+//	ScopeNode getContext();
 }

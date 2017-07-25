@@ -8,10 +8,7 @@ import com.intellij.psi.tree.IElementType;
 import org.antlr.jetbrains.adaptor.lexer.PSIElementTypeFactory;
 import org.antlr.jetbrains.adaptor.lexer.RuleIElementType;
 import org.antlr.jetbrains.adaptor.lexer.TokenIElementType;
-import org.antlr.v4.runtime.ANTLRErrorListener;
-import org.antlr.v4.runtime.Parser;
-import org.antlr.v4.runtime.ParserRuleContext;
-import org.antlr.v4.runtime.Token;
+import org.antlr.v4.runtime.*;
 import org.antlr.v4.runtime.tree.ErrorNode;
 import org.antlr.v4.runtime.tree.ParseTreeListener;
 import org.antlr.v4.runtime.tree.TerminalNode;
@@ -29,7 +26,7 @@ import java.util.Map;
  *  The list of SyntaxError objects are pulled from the parser and used
  *  for error message highlighting (error nodes don't have the info).
  */
-public class ANTLRParseTreeToPSIConverter implements ParseTreeListener {
+public class ANTLRParseTreeToPSIConverter extends BaseErrorListener implements ParseTreeListener {
 	protected final Language language;
 	protected final PsiBuilder builder;
 	protected List<SyntaxError> syntaxErrors;
@@ -61,6 +58,18 @@ public class ANTLRParseTreeToPSIConverter implements ParseTreeListener {
 		}
 	}
 
+	@Override
+	public void syntaxError(Recognizer<?, ?> recognizer, Object offendingSymbol, int line, int charPositionInLine, String msg, RecognitionException e) {
+		if (e instanceof NoViableAltException) {
+			tokenToErrorMap.put(((NoViableAltException) e).getStartToken().getStartIndex(), new SyntaxError(recognizer, ((NoViableAltException) e).getStartToken(), line, charPositionInLine, msg, e));
+			System.out.println(" no viable alt from " + ((NoViableAltException) e).getStartToken().getStartIndex() + " to "+ ((Token) offendingSymbol).getStartIndex());
+		}
+		else {
+			tokenToErrorMap.put(((Token) offendingSymbol).getStartIndex(), new SyntaxError(recognizer, (Token) offendingSymbol, line, charPositionInLine, msg, e));
+			System.out.println("other error at " + ((Token) offendingSymbol).getStartIndex());
+		}
+	}
+
 	protected final Language getLanguage() {
 		return language;
 	}
@@ -84,6 +93,8 @@ public class ANTLRParseTreeToPSIConverter implements ParseTreeListener {
 	@Override
 	public void visitTerminal(TerminalNode node) {
 		builder.advanceLexer();
+		builder.getTokenType();
+
 	}
 
 	/** Summary. For any syntax error thrown by the parser, there will be an
@@ -123,9 +134,11 @@ public class ANTLRParseTreeToPSIConverter implements ParseTreeListener {
 		boolean isConjuredToken = badToken.getTokenIndex()<0;
 		int nodeStartIndex = badToken.getStartIndex();
 		SyntaxError error = tokenToErrorMap.get(nodeStartIndex);
+		System.out.println( "visiting error node at " + nodeStartIndex +" ,error text " + error);
 
 		if ( error!=null ) {
 			PsiBuilder.Marker errorMarker = builder.mark();
+			String message = String.format("%s%n", error.getMessage());
 			if ( badToken.getStartIndex()>=0 &&
 				 badToken.getType()!=Token.EOF &&
 				 !isConjuredToken )
@@ -135,7 +148,7 @@ public class ANTLRParseTreeToPSIConverter implements ParseTreeListener {
 				// but can't consume a token that does not exist.
 				builder.advanceLexer();
 			}
-			String message = String.format("%s%n", error.getMessage());
+
 			errorMarker.error(message);
 		}
 		else {
