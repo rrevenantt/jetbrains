@@ -2,6 +2,7 @@ package org.antlr.jetbrains.adaptor.parser;
 
 import com.intellij.lang.*;
 import com.intellij.lang.impl.PsiBuilderImpl;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.progress.ProgressIndicatorProvider;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.psi.tree.IElementType;
@@ -10,6 +11,7 @@ import com.intellij.psi.tree.IFileElementType;
 import org.antlr.jetbrains.adaptor.lexer.PSITokenSource;
 import org.antlr.v4.runtime.*;
 import org.antlr.v4.runtime.atn.PredictionMode;
+import org.antlr.v4.runtime.misc.IntervalSet;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
 import org.jetbrains.annotations.NotNull;
@@ -60,8 +62,8 @@ public abstract class ANTLRParserAdaptor implements PsiParser {
 //                System.out.println("builder index before " + builder.rawTokenIndex());
 //                System.out.println("curr stream index    " + this.p);
 //                ((PSITokenSource) getTokenSource()).builderTokenIndex = builder.rawTokenIndex();
-                builder.getTokenType();  // to skip whitespaces and comments
-                ((PSITokenSource) getTokenSource()).builderTokenIndex = builder.rawTokenIndex();
+//                builder.getTokenType();  // to skip whitespaces and comments
+//                ((PSITokenSource) getTokenSource()).builderTokenIndex = builder.rawTokenIndex();
                 super.consume();
 //                System.out.println("next stream index    " + this.p);
 //                System.out.println("builder index        " + builder.rawTokenIndex());
@@ -80,12 +82,16 @@ public abstract class ANTLRParserAdaptor implements PsiParser {
 //        ((CommonTokenStream) parser.getTokenStream()).seek(0);
 //        while (tokens.LA(1) != Token.EOF && parser.getCurrentToken().getType() != Token.EOF) {
 //            PsiBuilder.Marker rollbackMarker = builder.mark();
-            parser.setBuildParseTree(false);
+//            parser.setBuildParseTree(false);
             ANTLRParseTreeToPSIConverter listener = createListener(parser, root, builder);
             parser.addParseListener(listener);
             parser.addErrorListener(listener);
             try {
                 parseTree = parse(parser, root);
+                if (ApplicationManager.getApplication().isUnitTestMode()) {
+//                    System.out.println(((CommonTokenStream) tokens).getTokens().toString());
+//                    System.out.println(parseTree.toStringTree(parser));
+                }
             } finally {
 //                rollbackMarker.rollbackTo();
             }

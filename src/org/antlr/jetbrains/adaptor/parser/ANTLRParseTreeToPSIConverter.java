@@ -66,7 +66,7 @@ public class ANTLRParseTreeToPSIConverter extends BaseErrorListener implements P
 		}
 		else {
 			tokenToErrorMap.put(((Token) offendingSymbol).getStartIndex(), new SyntaxError(recognizer, (Token) offendingSymbol, line, charPositionInLine, msg, e));
-			System.out.println("other error at " + ((Token) offendingSymbol).getStartIndex());
+			System.out.println("other error at " + ((Token) offendingSymbol).getStartIndex()+" "+ msg);
 		}
 	}
 
@@ -94,7 +94,7 @@ public class ANTLRParseTreeToPSIConverter extends BaseErrorListener implements P
 	public void visitTerminal(TerminalNode node) {
 		builder.advanceLexer();
 		builder.getTokenType();
-
+//		System.out.println("--visiting terminal " + node.getSymbol().getStartIndex() + "  " + node.getText());
 	}
 
 	/** Summary. For any syntax error thrown by the parser, there will be an

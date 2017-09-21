@@ -52,6 +52,8 @@ public class PSITokenSource implements TokenSource {
 	@Override
 	public Token nextToken() {
 		ProgressIndicatorProvider.checkCanceled();
+		builder.getTokenType();  // to skip whitespaces and comments
+		builderTokenIndex = builder.rawTokenIndex();
 
 
 		int tokenOffset = currentTokenIndex- builderTokenIndex;
