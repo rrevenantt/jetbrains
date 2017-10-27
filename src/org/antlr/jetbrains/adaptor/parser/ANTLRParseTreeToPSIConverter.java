@@ -66,7 +66,7 @@ public class ANTLRParseTreeToPSIConverter extends BaseErrorListener implements P
 		}
 		else {
 			tokenToErrorMap.put(((Token) offendingSymbol).getStartIndex(), new SyntaxError(recognizer, (Token) offendingSymbol, line, charPositionInLine, msg, e));
-			System.out.println("other error at " + ((Token) offendingSymbol).getStartIndex()+" "+ msg);
+//			System.out.println("other error at " + ((Token) offendingSymbol).getStartIndex()+" "+ msg);
 		}
 	}
 
@@ -134,7 +134,7 @@ public class ANTLRParseTreeToPSIConverter extends BaseErrorListener implements P
 		boolean isConjuredToken = badToken.getTokenIndex()<0;
 		int nodeStartIndex = badToken.getStartIndex();
 		SyntaxError error = tokenToErrorMap.get(nodeStartIndex);
-		System.out.println( "visiting error node at " + nodeStartIndex +" ,error text " + error);
+//		System.out.println( "visiting error node at " + nodeStartIndex +" ,error text " + error);
 
 		if ( error!=null ) {
 			PsiBuilder.Marker errorMarker = builder.mark();

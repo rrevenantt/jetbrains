@@ -74,7 +74,7 @@ public abstract class ANTLRParserAdaptor implements PsiParser {
         parser.setErrorHandler(new ErrorStrategyAdaptor()); // tweaks missing tokens
         parser.removeErrorListeners();
         parser.addErrorListener(new SyntaxErrorListener()); // trap errors
-        parser.addErrorListener(new ConsoleErrorListener());
+//        parser.addErrorListener(new ConsoleErrorListener());
 //        parser.getInterpreter().setPredictionMode(PredictionMode.SLL);
 
         ParseTree parseTree = null;
