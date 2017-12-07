@@ -1,5 +1,6 @@
 package org.antlr.jetbrains.adaptor.psi;
 
+import com.hlasm_plugin.psi.HlasmPSIFileRoot;
 import com.intellij.extapi.psi.ASTWrapperPsiElement;
 import com.intellij.lang.ASTNode;
 import com.intellij.psi.PsiElement;
@@ -50,6 +51,7 @@ public class ANTLRPsiNode extends ASTWrapperPsiElement {
 	 */
 	@Override
 	public ScopeNode getContext() {
-		return SymtabUtils.getContextFor(this);
+//		return SymtabUtils.getContextFor(this);
+		return (HlasmPSIFileRoot)this.getContainingFile();
 	}
 }
